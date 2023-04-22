@@ -1,12 +1,14 @@
 import unittest
 from main import ExpenseTracker
 import json
+import datetime
 
 
 class MyTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.expense_tracker = ExpenseTracker()
+        self.PATH = "datas/expenses.json"
+        self.expense_tracker = ExpenseTracker(self.PATH)
         self.examp_currs = ("USD", "HUF")
         self.amount = "6"
 
@@ -28,7 +30,24 @@ class MyTest(unittest.TestCase):
         expense = self.expense_tracker.ask_expense()
         self.assertIsInstance(expense, int)
 
+    def test_file_does_not_exists(self):
+        does_exist = self.expense_tracker.file_exists()
+        self.assertFalse(does_exist)
+
+    def test_file_exists(self):
+        does_exist = self.expense_tracker.file_exists()
+        self.assertTrue(does_exist)
+
+    def test_save_expesne_when_file_doesnt_exsits(self):
+        self.expense_tracker.save_expesne("Jani", "312")
+
+    def test_get_date(self):
+        todays_date_ref = datetime.datetime.now().date()
+        todays_date_func = self.expense_tracker.get_date()
+        self.assertEqual(todays_date_func, todays_date_ref)
+
+
 if __name__ == '__main__':
     unittest.main()
 
-    # python -m unittest -k test_ask_expense
+    # python -m unittest -k test_save_expesne_when_file_doesnt_exsits
