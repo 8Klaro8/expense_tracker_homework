@@ -45,24 +45,49 @@ class ExpenseTracker:
         if self.file_exists():
             with open(self.file_to_save, "r") as file:
                 pass
+
+    def _simple_save(self, data):
+        """ Saves whatever passed to json file """
+        with open(self.file_to_save, "w") as file:
+            file.write(data)
     
     def save_expesne(self, user, expense):
         """ Saves expense to user """
         if self.file_exists():
             with open(self.file_to_save, "r") as file:
-                pass
-                # datas = file.read()
-                # datas[user]
-                # # TODO finsih it
+                datas = file.read()
+                json_datas = json.loads(datas)
+
+                # CHECK IF USER EXISTS
+                try:
+                    curr_user_datas = json_datas["users"][user]
+                    print(f"current user datas: {curr_user_datas}")
+                    # CHECK IF DATE EXISTS
+                    try:
+                        expenses = curr_user_datas["date"][self.get_date()]
+                        expenses.append(expense)
+                        json_datas["users"][user]["date"][self.get_date()] = expenses
+                        string_data = json.dumps(json_datas)
+                        self._simple_save(string_data)
+
+
+                    except Exception as e:
+                        # datas["users"][user][self.get_date()]
+                        print(e)
+                except:
+                    pass
+
+
+                # TODO finsih it
         else:
             with open(self.file_to_save, "w") as file:
-                my_dict = {"users": {"user": {"date": {str(self.get_date()): [expense]}}}}
+                my_dict = {"users": {"user": {"date": {self.get_date(): [expense]}}}}
                 jsoned_dict = json.dumps(my_dict)
                 file.write(jsoned_dict)
 
     def get_date(self) -> str:
         """ Returns today's date """
-        return datetime.datetime.now().date()
+        return str(datetime.datetime.now().date())
 
 
 
