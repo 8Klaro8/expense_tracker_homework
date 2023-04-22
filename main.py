@@ -28,6 +28,15 @@ class ExpenseTracker:
         """ Converts given value to dict """
         json_result =  json.loads(value)
         return json_result
+    
+    def ask_expense(self) -> int:
+        while True:
+            expense = input("Write your expense:\n").strip()
+            try:
+                return int(expense)
+            except:
+                print("Type only number!")
+                continue
 
 
 if __name__ == '__main__':

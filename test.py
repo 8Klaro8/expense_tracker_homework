@@ -24,5 +24,11 @@ class MyTest(unittest.TestCase):
         result = self.expense_tracker.convert_currency(*self.examp_currs, self.amount)
         self.assertIsInstance(result, str)
 
+    def test_ask_expense(self):
+        expense = self.expense_tracker.ask_expense()
+        self.assertIsInstance(expense, int)
+
 if __name__ == '__main__':
     unittest.main()
+
+    # python -m unittest -k test_ask_expense
