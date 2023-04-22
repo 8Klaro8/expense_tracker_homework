@@ -76,7 +76,9 @@ class ExpenseTracker:
                         string_data = json.dumps(json_datas)
                         self._simple_save(string_data)
                 except:
-                    pass
+                    json_datas["users"].update({user: {"date": {self.get_date(): [expense]}}})
+                    string_data = json.dumps(json_datas)
+                    self._simple_save(string_data)
 
 
                 # TODO finsih it
