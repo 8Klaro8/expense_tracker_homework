@@ -71,9 +71,10 @@ class ExpenseTracker:
                         self._simple_save(string_data)
 
 
-                    except Exception as e:
-                        # datas["users"][user][self.get_date()]
-                        print(e)
+                    except:
+                        json_datas["users"][user]["date"][self.get_date()] = [expense]
+                        string_data = json.dumps(json_datas)
+                        self._simple_save(string_data)
                 except:
                     pass
 
