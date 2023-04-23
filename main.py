@@ -16,12 +16,12 @@ class ExpenseTracker:
         response = requests.get(url=url, headers=self.headers)
         return response.text  
     
-    def convert_currency(self, base: str, convert_to: str, amount: str) -> str:
-        """ Calls API and converts currency """
+    def get_converted_currency(self, base: str, convert_to: str, amount: str) -> str:
+        """ Calls API and converts currency and returns converted value """
         url = f"https://api.apilayer.com/fixer/convert?from={base}&to={convert_to}& \
                 amount={amount}"
         response = requests.get(url=url, headers=self.headers)
-        return response.text
+        return response.json()["result"]
     
     def convert_str_to_json(self, value: str) -> json:
         """ Converts given value to dict """
@@ -115,11 +115,16 @@ class ExpenseTracker:
         except:
             return False
 
-    def get_all_available_currency(self):
+    def get_all_available_currency(self) -> list:
         """ Returns all available currency """
+        all_currency_shorts = []
         url = f"https://api.apilayer.com/fixer/symbols"
         response = requests.get(url, self.headers)
-        print(response.text)
+        all_currency = response.json()["symbols"]
+        for key, value in all_currency.items():
+            all_currency_shorts.append(key)
+        return all_currency_shorts
+
 
 class MyManager:
     def __init__(self, expense_tracker) -> None:
@@ -128,13 +133,13 @@ class MyManager:
 
     def start(self):
         while True:
-            prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses","3.)\tSee all time expense"
-                      "\n4.)\tConvert currency")
+            prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses",
+                      "3.)\tSee all time expense","4.)\tConvert currency")
             choice = self.control_input(*prompt)
 
             match choice:
                 case "1":
-                    expense = self.control_input("Expense:")
+                    expense = self.loop_while_not_number("Expense:")
                     expense_tracker.save_expense(self.user, expense)
                     print(f"\n========================\nExpense ${expense}"
                           " has been added.\n========================\n")
@@ -146,13 +151,37 @@ class MyManager:
                     self.show_all_time_expense()
 
                 case "4":
-                    self.convert_currency()
+                    self.convert_currency_panel()
 
-    def convert_currency(self):
+    def convert_currency_panel(self):
         prompt = ("Choose...", "\n1.)\tConvert", "2.)\tSee avaialble currencies")
-        self.control_input(*prompt)
-        choice = input()
+        choice = self.control_input(*prompt)
 
+        match choice:
+            case "1":
+                self.choose_to_convert()
+            case "2":
+                available_currencies = expense_tracker.get_all_available_currency()
+                for currency in available_currencies:
+                    print(currency)
+
+    def choose_to_convert(self):
+        curr_from = input("\nCurrency to convert from...").upper()
+        curr_to = input("Currency to convert to...").upper()
+        amount = self.loop_while_not_number("Give amount...")
+        converted_amount = expense_tracker.get_converted_currency(curr_from, curr_to, amount)
+
+        currency_sign = ""
+        if curr_to == "USD":
+            currency_sign = "$"
+        elif curr_to == "HUF":
+            currency_sign = "Ft "
+        elif curr_to == "EUR":
+            currency_sign = "€"
+
+        print(f"\n======================\nConverted rate: {currency_sign}"
+              f"{converted_amount}\n======================")
+        input("Type anythnig to continue...")
 
     def show_all_time_expense(self):
         all_time_expense = expense_tracker.get_expenses_by_user(self.user)
@@ -169,6 +198,18 @@ class MyManager:
         for expense in todays_expenses:
             print(f"${expense}")
         print("=================\n")
+
+    def loop_while_not_number(self, text) -> str:
+        """ Loops until user doesnt give valid expense """
+        while True:
+            choice = input(f"{text}\n")
+            if choice.strip().isalpha():
+                print("\n==================\nGive number only"
+                      "\n==================\n")
+                continue
+            else:
+                break
+        return choice
                     
     def control_input(self, *text: str) -> str:
         """ Loops while input is not correct """
@@ -183,7 +224,7 @@ class MyManager:
                        "only.\n=====================\n")
                 continue
             else:
-                if int(user_input) > len(text):
+                if int(user_input) > (len(text) -1 ) or int(user_input) < 1:
                     print("\n==================\nChoose valid number"
                           "\n==================\n")
                     continue
