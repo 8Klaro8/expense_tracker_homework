@@ -4,6 +4,7 @@ import requests
 from fixed_api_key import fixed_api_key
 import datetime
 from functools import reduce
+import keyboard
 
 class ExpenseTracker:
     def __init__(self, my_file: str, password_file: str, logged_in_user: str) -> None:
@@ -13,6 +14,7 @@ class ExpenseTracker:
         self.logged_in_user = logged_in_user
 
     def save_user(self, username, password):
+        """Saves user to password file"""
         user_and_password = {username: password}
         if self.file_exists(self.password_file):
             with open(self.password_file, 'r', encoding="utf-8") as file:
@@ -65,22 +67,32 @@ class ExpenseTracker:
         if self.file_exists(self.my_file):
             expenses = []
             json_datas = self.get_json_data_from_file()
-            all_date = json_datas["users"][user]["date"]
-            for date in all_date:
-                expense_by_date = all_date[date]
-                for expense in expense_by_date:
-                    expenses.append(expense)
-            return expenses
+            try:
+                all_date = json_datas["users"][user]["date"]
+                for date in all_date:
+                    expense_by_date = all_date[date]
+                    for expense in expense_by_date:
+                        expenses.append(expense)
+                return expenses
+            except:
+                print("\n========================\nYou have no transaction yet."
+                      "\n========================")
+                return
 
     def get_expenses_by_user_and_datum(self, user: str, datum: str):
         """ Returns all expenses by user and datum """
         if self.file_exists(self.my_file):
             expenses = []
             json_datas = self.get_json_data_from_file()
-            all_expense_in_datum = json_datas["users"][user]["date"][datum]
-            for expense in all_expense_in_datum:
-                expenses.append(expense)
-            return expenses
+            try:
+                all_expense_in_datum = json_datas["users"][user]["date"][datum]
+                for expense in all_expense_in_datum:
+                    expenses.append(expense)
+                return expenses
+            except:
+                print("\n========================\nYou have no transaction yet."
+                      "\n========================")
+                return
         
     def _simple_save(self, data):
         """ Saves whatever passed to json file """
@@ -154,7 +166,7 @@ class MyManager:
         # self.user = user
 
     def starting_page(self):
-        """Shows the starting page after login/ register"""
+        """Very first page the user sees"""
         values = ("Choose", "\n1.)\tLogin", "2.)\tRegister")
         choice = self._control_input(*values)
         match choice:
@@ -164,10 +176,10 @@ class MyManager:
                 self.register_page()
 
     def start(self):
-        """Very first page the user sees"""
+        """Shows the starting page after login/ register"""
         while True:
             prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses",
-                      "3.)\tSee all time expense","4.)\tConvert currency")
+                      "3.)\tSee all time expense","4.)\tConvert currency", "5.)\tLog out")
             choice = self._control_input(*prompt)
 
             match choice:
@@ -185,6 +197,9 @@ class MyManager:
 
                 case "4":
                     self.convert_currency_panel()
+                case "5":
+                    self.log_out_user()
+
 
     def login_page(self):
         """Creates a login page"""
@@ -199,8 +214,16 @@ class MyManager:
             else:
                 print("\n================================\n"
                       "User does not exists!\n================================"
-                      "\nHere is the register page...")
-                self.register_page()
+                      "\nPress 'b' to go back...")
+                if keyboard.read_key().lower() == "b":
+                    self.starting_page()
+                else:
+                    continue
+
+    def log_out_user(self):
+        with open(self.expense_tracker.logged_in_user, "w") as file:
+            file.write("")
+        self.starting_page()
 
     def get_logged_user(self) -> str:
         """Retuns the currently logged in user"""
@@ -238,6 +261,8 @@ class MyManager:
         username = input("\nGive a username...\n")
         password = input("Give a password...\n")
         self.expense_tracker.save_user(username, password)
+        self.save_logged_user(username)
+        self.start()
 
     def convert_currency_panel(self):
         """ Prompt options what user want to do before converting"""
@@ -274,20 +299,39 @@ class MyManager:
     def show_all_time_expense(self):
         """ Shows the all time expense of the user"""
         all_time_expense = expense_tracker.get_expenses_by_user(self.get_logged_user())
-        sum_all_time_expense = reduce(lambda x,y: int(x) + int(y), all_time_expense)
-        print(f"\n========================\nAll time expense: ${sum_all_time_expense}")
-        print(f"Trasactions: {len(all_time_expense)}\n========================\n")
+        try:
+            sum_all_time_expense = reduce(lambda x,y: int(x) + int(y), all_time_expense)
+            print(f"\n========================\nAll time expense: ${sum_all_time_expense}")
+            print(f"Trasactions: {len(all_time_expense)}\n========================\n")
+        except:
+            print("\n========================\nYou have no transaction yet."
+                    "\n========================")
+            return
+
+    def does_user_have_transaction(self, user: str) -> bool:
+        json_datas = self.expense_tracker.get_json_data_from_file()
+        try:
+            all_expense_in_datum = json_datas["users"][user]["date"][self.expense_tracker.get_date()]
+            return True
+        except:
+            return False
+
 
     def show_todays_expenses(self):
         """ Shows today's expense of the user """
-        todays_date = str(datetime.datetime.now().date())
-        todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.get_logged_user(), todays_date)
-        print("\n=================\nToday's expenses:")
-        print(f"Total: ${reduce(lambda x, y: int(x) + int(y), todays_expenses) }")
-        print(f"Trasactions: {len(todays_expenses)}")
-        for expense in todays_expenses:
-            print(f"${expense}")
-        print("=================\n")
+        if self.does_user_have_transaction(self.get_logged_user()):
+            todays_date = str(datetime.datetime.now().date())
+            todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.get_logged_user(), todays_date)
+            print("\n=================\nToday's expenses:")
+            print(f"Total: ${reduce(lambda x, y: int(x) + int(y), todays_expenses) }")
+            print(f"Trasactions: {len(todays_expenses)}")
+            for expense in todays_expenses:
+                print(f"${expense}")
+            print("=================\n")
+        else:
+            print("\n========================\nYou have no transaction yet."
+                    "\n========================")
+            return
 
     def _loop_while_not_number(self, text) -> str:
         """ Loops until user doesnt give valid expense """
