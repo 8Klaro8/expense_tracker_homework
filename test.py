@@ -7,8 +7,11 @@ import datetime
 class MyTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.PATH = "datas/expenses.json"
-        self.expense_tracker = ExpenseTracker(self.PATH)
+        self.USER_FILE = "datas/expenses.json"
+        self.PASSWORD_FILE = "datas/passwords.json"
+        self.LOGGED_IN_USER = "datas/logged_in_user.txt"
+        self.expense_tracker = ExpenseTracker(self.USER_FILE, self.PASSWORD_FILE, self.LOGGED_IN_USER)
+        self.example_user = "user"
         self.my_manager = MyManager(self.expense_tracker)
         self.examp_currs = ("USD", "HUF")
         self.amount = "6"
@@ -59,14 +62,23 @@ class MyTest(unittest.TestCase):
     #     expenses = self.expense_tracker.get_expenses_by_user_and_datum("user1", "2023-04-22")
     #     self.assertEqual(["2222", "33333"], expenses)
 
-    def test_start(self):
-        self.my_manager.start()
+    # def test_start(self):
+    #     self.my_manager.start()
 
     # def test_get_all_available_currency(self):
     #     self.expense_tracker.get_all_available_currency()
 
     # def test_convert_currency(self):
     #     self.my_manager.convert_currency()
+
+    # def test_starting_page(self):
+    #     self.my_manager.starting_page()
+
+    # def test_save_user(self):
+    #     self.expense_tracker.save_user("BBB", "555")
+
+    def test_start_page(self):
+        self.my_manager.starting_page()
 
 if __name__ == '__main__':
     unittest.main()

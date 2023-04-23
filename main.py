@@ -6,14 +6,31 @@ import datetime
 from functools import reduce
 
 class ExpenseTracker:
-    def __init__(self, my_file: str) -> None:
+    def __init__(self, my_file: str, password_file: str, logged_in_user: str) -> None:
         self.headers = {"apikey": fixed_api_key}
         self.my_file = my_file
+        self.password_file = password_file
+        self.logged_in_user = logged_in_user
 
     def save_user(self, username, password):
-        user_json = {"users"}
-        with open(self.my_file, "w") as file:
-            file.write
+        user_and_password = {username: password}
+        if self.file_exists(self.password_file):
+            with open(self.password_file, 'r', encoding="utf-8") as file:
+                datas = file.read()
+                if datas.strip() == "": 
+                    with open(self.password_file, "w", encoding="utf-8") as file:
+                        dumped_data = json.dumps({"users": {username: password}})
+                        file.write(dumped_data)
+                else:
+                    json_datas = json.loads(datas)
+                    json_datas["users"].update({username: password})
+                    with open(self.password_file, "w", encoding="utf-8") as file:
+                        json_user_and_password = json.dumps(json_datas)
+                        file.write(json_user_and_password)
+        else:
+            with open(self.password_file, "w", encoding="utf-8") as file:
+                json_user_and_password = json.dumps({"users": user_and_password})
+                file.write(json_user_and_password)
 
     def get_HUF_base_USD(self, base: str, symbol: str) -> str:
         """ Gets the current value of one currency compare to an other"""
@@ -45,7 +62,7 @@ class ExpenseTracker:
 
     def get_expenses_by_user(self, user: str) -> list:
         """ Returns all expenses by user """
-        if self.file_exists():
+        if self.file_exists(self.my_file):
             expenses = []
             json_datas = self.get_json_data_from_file()
             all_date = json_datas["users"][user]["date"]
@@ -57,7 +74,7 @@ class ExpenseTracker:
 
     def get_expenses_by_user_and_datum(self, user: str, datum: str):
         """ Returns all expenses by user and datum """
-        if self.file_exists():
+        if self.file_exists(self.my_file):
             expenses = []
             json_datas = self.get_json_data_from_file()
             all_expense_in_datum = json_datas["users"][user]["date"][datum]
@@ -72,7 +89,7 @@ class ExpenseTracker:
     
     def save_expense(self, user: str, expense: str):
         """ Saves expense to user """
-        if self.file_exists():
+        if self.file_exists(self.my_file):
                 json_datas = self.get_json_data_from_file()
                 # CHECK IF USER EXISTS
                 try:
@@ -111,10 +128,10 @@ class ExpenseTracker:
         """ Returns today's date """
         return str(datetime.datetime.now().date())
 
-    def file_exists(self) -> bool:
+    def file_exists(self, file_path) -> bool:
         """ Cheks if expenses.json exists """
         try:
-            with open(self.my_file, "r") as file:
+            with open(file_path, "r") as file:
                 file.read()
                 return True
         except:
@@ -132,11 +149,12 @@ class ExpenseTracker:
 
 
 class MyManager:
-    def __init__(self, expense_tracker) -> None:
+    def __init__(self, expense_tracker: ExpenseTracker) -> None:
         self.expense_tracker = expense_tracker
-        self.user = "user"
+        # self.user = user
 
     def starting_page(self):
+        """Shows the starting page after login/ register"""
         values = ("Choose", "\n1.)\tLogin", "2.)\tRegister")
         choice = self._control_input(*values)
         match choice:
@@ -146,6 +164,7 @@ class MyManager:
                 self.register_page()
 
     def start(self):
+        """Very first page the user sees"""
         while True:
             prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses",
                       "3.)\tSee all time expense","4.)\tConvert currency")
@@ -154,7 +173,7 @@ class MyManager:
             match choice:
                 case "1":
                     expense = self._loop_while_not_number("Expense:")
-                    expense_tracker.save_expense(self.user, expense)
+                    expense_tracker.save_expense(self.get_logged_user(), expense)
                     print(f"\n========================\nExpense ${expense}"
                           " has been added.\n========================\n")
 
@@ -167,9 +186,58 @@ class MyManager:
                 case "4":
                     self.convert_currency_panel()
 
+    def login_page(self):
+        """Creates a login page"""
+        while True:
+            username = input("Username:\n")
+            if self.does_user_exists(username):
+                password = input("Password:\n")
+                if self.does_password_match(username, password):
+                    self.save_logged_user(username)
+                    self.start()
+                    
+            else:
+                print("\n================================\n"
+                      "User does not exists!\n================================"
+                      "\nHere is the register page...")
+                self.register_page()
+
+    def get_logged_user(self) -> str:
+        """Retuns the currently logged in user"""
+        with open(self.expense_tracker.logged_in_user, "r") as file:
+            return file.read()
+            
+    def save_logged_user(self, user):
+        """ Saves the user when he is logged in"""
+        with open(self.expense_tracker.logged_in_user, "w") as file:
+            file.write(user)
+
+    def does_password_match(self, user: str, password: str) -> bool:
+        """ Checks whether the password matched or not"""
+        with open(self.expense_tracker.password_file, "r") as file:
+            datas = file.read()
+            json_datas = json.loads(datas)
+            saved_password = json_datas["users"][user]
+            if saved_password == password:
+                return True
+            return False
+
+    def does_user_exists(self, user: str) -> bool:
+        """Checks whether the user exists"""
+        with open(self.expense_tracker.password_file, "r") as file:
+            datas = file.read()
+            json_datas = json.loads(datas)
+            try:
+                json_datas["users"][user]
+                return True
+            except:
+                return False
+
     def register_page(self):
-        username = input("Give a username...\n")
+        """Opens the regster page"""
+        username = input("\nGive a username...\n")
         password = input("Give a password...\n")
+        self.expense_tracker.save_user(username, password)
 
     def convert_currency_panel(self):
         """ Prompt options what user want to do before converting"""
@@ -205,7 +273,7 @@ class MyManager:
 
     def show_all_time_expense(self):
         """ Shows the all time expense of the user"""
-        all_time_expense = expense_tracker.get_expenses_by_user(self.user)
+        all_time_expense = expense_tracker.get_expenses_by_user(self.get_logged_user())
         sum_all_time_expense = reduce(lambda x,y: int(x) + int(y), all_time_expense)
         print(f"\n========================\nAll time expense: ${sum_all_time_expense}")
         print(f"Trasactions: {len(all_time_expense)}\n========================\n")
@@ -213,7 +281,7 @@ class MyManager:
     def show_todays_expenses(self):
         """ Shows today's expense of the user """
         todays_date = str(datetime.datetime.now().date())
-        todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.user, todays_date)
+        todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.get_logged_user(), todays_date)
         print("\n=================\nToday's expenses:")
         print(f"Total: ${reduce(lambda x, y: int(x) + int(y), todays_expenses) }")
         print(f"Trasactions: {len(todays_expenses)}")
@@ -256,11 +324,13 @@ class MyManager:
 
         return user_input
 
-expense_tracker = ExpenseTracker("datas/expenses.json")
+USER_FILE = "datas/expenses.json"
+PASSWORD_FILE = "datas/passwords.json"
+LOGGED_IN_USER = "datas/logged_in_user.txt"
+expense_tracker = ExpenseTracker(USER_FILE, PASSWORD_FILE, LOGGED_IN_USER)
 my_manager = MyManager(expense_tracker)
 
 
 # if __name__ == '__main__':
-#     e_t = ExpenseTracker("datas/expenses.json")
-#     result = e_t.convert_currency("USD", "HUF", "5")
+#     result = expense_tracker.convert_currency("USD", "HUF", "5")
 #     print(result)
