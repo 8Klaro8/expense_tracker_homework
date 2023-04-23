@@ -16,8 +16,7 @@ class ExpenseTracker:
         """ Gets the current value of one currency compare to an other"""
         url = f"https://api.apilayer.com/fixer/latest?base={base}&symbols={symbol}"
         response = requests.get(url=url, headers=self.headers)
-        return response.text
-    
+        return response.text  
     
     def convert_currency(self, base: str, convert_to: str, amount: str) -> str:
         url = f"https://api.apilayer.com/fixer/convert?from={base}&to={convert_to}& \
@@ -40,24 +39,37 @@ class ExpenseTracker:
                 print("Type only number!")
                 continue
 
-    def read_expense(self):
-        """ Reads all expenses by user """
+    def get_expenses_by_user(self, user: str) -> list:
+        """ Returns all expenses by user """
         if self.file_exists():
-            with open(self.file_to_save, "r") as file:
-                pass
+            expenses = []
+            json_datas = self.get_json_data_from_file()
+            all_date = json_datas["users"][user]["date"]
+            for date in all_date:
+                expense_by_date = all_date[date]
+                for expense in expense_by_date:
+                    expenses.append(expense)
+            return expenses
 
+    def get_expenses_by_user_and_datum(self, user, datum):
+        """ Returns all expenses by user and datum """
+        if self.file_exists():
+            expenses = []
+            json_datas = self.get_json_data_from_file()
+            all_expense_in_datum = json_datas["users"][user]["date"][datum]
+            for expense in all_expense_in_datum:
+                expenses.append(expense)
+            return expenses
+        
     def _simple_save(self, data):
         """ Saves whatever passed to json file """
         with open(self.file_to_save, "w") as file:
             file.write(data)
     
-    def save_expesne(self, user, expense):
+    def save_expense(self, user, expense):
         """ Saves expense to user """
         if self.file_exists():
-            with open(self.file_to_save, "r") as file:
-                datas = file.read()
-                json_datas = json.loads(datas)
-
+                json_datas = self.get_json_data_from_file()
                 # CHECK IF USER EXISTS
                 try:
                     curr_user_datas = json_datas["users"][user]
@@ -80,19 +92,21 @@ class ExpenseTracker:
                     string_data = json.dumps(json_datas)
                     self._simple_save(string_data)
 
-
-                # TODO finsih it
         else:
             with open(self.file_to_save, "w") as file:
                 my_dict = {"users": {"user": {"date": {self.get_date(): [expense]}}}}
                 jsoned_dict = json.dumps(my_dict)
                 file.write(jsoned_dict)
+        
+    def get_json_data_from_file(self) -> dict:
+        """ Reads and retuns the expenses data in dict """
+        with open(self.file_to_save, 'r') as file:
+            datas = file.read()
+            return json.loads(datas)
 
     def get_date(self) -> str:
         """ Returns today's date """
         return str(datetime.datetime.now().date())
-
-
 
     def file_exists(self) -> bool:
         """ Cheks if expenses.json exists """
