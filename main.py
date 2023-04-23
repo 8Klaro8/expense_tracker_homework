@@ -10,6 +10,11 @@ class ExpenseTracker:
         self.headers = {"apikey": fixed_api_key}
         self.my_file = my_file
 
+    def save_user(self, username, password):
+        user_json = {"users"}
+        with open(self.my_file, "w") as file:
+            file.write
+
     def get_HUF_base_USD(self, base: str, symbol: str) -> str:
         """ Gets the current value of one currency compare to an other"""
         url = f"https://api.apilayer.com/fixer/latest?base={base}&symbols={symbol}"
@@ -131,15 +136,24 @@ class MyManager:
         self.expense_tracker = expense_tracker
         self.user = "user"
 
+    def starting_page(self):
+        values = ("Choose", "\n1.)\tLogin", "2.)\tRegister")
+        choice = self._control_input(*values)
+        match choice:
+            case "1":
+                self.login_page()
+            case "2":
+                self.register_page()
+
     def start(self):
         while True:
             prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses",
                       "3.)\tSee all time expense","4.)\tConvert currency")
-            choice = self.control_input(*prompt)
+            choice = self._control_input(*prompt)
 
             match choice:
                 case "1":
-                    expense = self.loop_while_not_number("Expense:")
+                    expense = self._loop_while_not_number("Expense:")
                     expense_tracker.save_expense(self.user, expense)
                     print(f"\n========================\nExpense ${expense}"
                           " has been added.\n========================\n")
@@ -153,9 +167,14 @@ class MyManager:
                 case "4":
                     self.convert_currency_panel()
 
+    def register_page(self):
+        username = input("Give a username...\n")
+        password = input("Give a password...\n")
+
     def convert_currency_panel(self):
+        """ Prompt options what user want to do before converting"""
         prompt = ("Choose...", "\n1.)\tConvert", "2.)\tSee avaialble currencies")
-        choice = self.control_input(*prompt)
+        choice = self._control_input(*prompt)
 
         match choice:
             case "1":
@@ -166,9 +185,10 @@ class MyManager:
                     print(currency)
 
     def choose_to_convert(self):
+        """ Asks user to give currencies which the suer want to convert """
         curr_from = input("\nCurrency to convert from...").upper()
         curr_to = input("Currency to convert to...").upper()
-        amount = self.loop_while_not_number("Give amount...")
+        amount = self._loop_while_not_number("Give amount...")
         converted_amount = expense_tracker.get_converted_currency(curr_from, curr_to, amount)
 
         currency_sign = ""
@@ -184,12 +204,14 @@ class MyManager:
         input("Type anythnig to continue...")
 
     def show_all_time_expense(self):
+        """ Shows the all time expense of the user"""
         all_time_expense = expense_tracker.get_expenses_by_user(self.user)
         sum_all_time_expense = reduce(lambda x,y: int(x) + int(y), all_time_expense)
         print(f"\n========================\nAll time expense: ${sum_all_time_expense}")
         print(f"Trasactions: {len(all_time_expense)}\n========================\n")
 
     def show_todays_expenses(self):
+        """ Shows today's expense of the user """
         todays_date = str(datetime.datetime.now().date())
         todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.user, todays_date)
         print("\n=================\nToday's expenses:")
@@ -199,7 +221,7 @@ class MyManager:
             print(f"${expense}")
         print("=================\n")
 
-    def loop_while_not_number(self, text) -> str:
+    def _loop_while_not_number(self, text) -> str:
         """ Loops until user doesnt give valid expense """
         while True:
             choice = input(f"{text}\n")
@@ -211,7 +233,7 @@ class MyManager:
                 break
         return choice
                     
-    def control_input(self, *text: str) -> str:
+    def _control_input(self, *text: str) -> str:
         """ Loops while input is not correct """
         while True:
             if len(text) > 1:
