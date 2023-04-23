@@ -1,5 +1,5 @@
 import unittest
-from main import ExpenseTracker
+from main import ExpenseTracker, MyManager
 import json
 import datetime
 
@@ -9,6 +9,7 @@ class MyTest(unittest.TestCase):
     def setUp(self) -> None:
         self.PATH = "datas/expenses.json"
         self.expense_tracker = ExpenseTracker(self.PATH)
+        self.my_manager = MyManager(self.expense_tracker)
         self.examp_currs = ("USD", "HUF")
         self.amount = "6"
 
@@ -42,7 +43,7 @@ class MyTest(unittest.TestCase):
     #     self.expense_tracker.save_expense("Jani", "312")
 
     # def test_get_date(self):
-    #     todays_date_ref = datetime.datetime.now().date()
+    #     todays_date_ref = str(datetime.datetime.now().date())
     #     todays_date_func = self.expense_tracker.get_date()
     #     self.assertEqual(todays_date_func, todays_date_ref)
 
@@ -58,7 +59,16 @@ class MyTest(unittest.TestCase):
     #     expenses = self.expense_tracker.get_expenses_by_user_and_datum("user1", "2023-04-22")
     #     self.assertEqual(["2222", "33333"], expenses)
 
+    def test_start(self):
+        self.my_manager.start()
+
+    # def test_get_all_available_currency(self):
+    #     self.expense_tracker.get_all_available_currency()
+
+    # def test_convert_currency(self):
+    #     self.my_manager.convert_currency()
+
 if __name__ == '__main__':
     unittest.main()
 
-    # python -m unittest -k test_get_expenses_by_user
+    # python -m unittest -k test_get_all_available_currency

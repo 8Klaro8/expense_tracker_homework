@@ -3,14 +3,12 @@ import json
 import requests
 from fixed_api_key import fixed_api_key
 import datetime
-
-
+from functools import reduce
 
 class ExpenseTracker:
-    def __init__(self, save_to_file: str) -> None:
+    def __init__(self, my_file: str) -> None:
         self.headers = {"apikey": fixed_api_key}
-        self.file_to_save = save_to_file
-        
+        self.my_file = my_file
 
     def get_HUF_base_USD(self, base: str, symbol: str) -> str:
         """ Gets the current value of one currency compare to an other"""
@@ -19,6 +17,7 @@ class ExpenseTracker:
         return response.text  
     
     def convert_currency(self, base: str, convert_to: str, amount: str) -> str:
+        """ Calls API and converts currency """
         url = f"https://api.apilayer.com/fixer/convert?from={base}&to={convert_to}& \
                 amount={amount}"
         response = requests.get(url=url, headers=self.headers)
@@ -51,7 +50,7 @@ class ExpenseTracker:
                     expenses.append(expense)
             return expenses
 
-    def get_expenses_by_user_and_datum(self, user, datum):
+    def get_expenses_by_user_and_datum(self, user: str, datum: str):
         """ Returns all expenses by user and datum """
         if self.file_exists():
             expenses = []
@@ -63,17 +62,16 @@ class ExpenseTracker:
         
     def _simple_save(self, data):
         """ Saves whatever passed to json file """
-        with open(self.file_to_save, "w") as file:
+        with open(self.my_file, "w") as file:
             file.write(data)
     
-    def save_expense(self, user, expense):
+    def save_expense(self, user: str, expense: str):
         """ Saves expense to user """
         if self.file_exists():
                 json_datas = self.get_json_data_from_file()
                 # CHECK IF USER EXISTS
                 try:
                     curr_user_datas = json_datas["users"][user]
-                    print(f"current user datas: {curr_user_datas}")
                     # CHECK IF DATE EXISTS
                     try:
                         expenses = curr_user_datas["date"][self.get_date()]
@@ -93,14 +91,14 @@ class ExpenseTracker:
                     self._simple_save(string_data)
 
         else:
-            with open(self.file_to_save, "w") as file:
+            with open(self.my_file, "w") as file:
                 my_dict = {"users": {"user": {"date": {self.get_date(): [expense]}}}}
                 jsoned_dict = json.dumps(my_dict)
                 file.write(jsoned_dict)
         
     def get_json_data_from_file(self) -> dict:
         """ Reads and retuns the expenses data in dict """
-        with open(self.file_to_save, 'r') as file:
+        with open(self.my_file, 'r') as file:
             datas = file.read()
             return json.loads(datas)
 
@@ -111,12 +109,92 @@ class ExpenseTracker:
     def file_exists(self) -> bool:
         """ Cheks if expenses.json exists """
         try:
-            with open(self.file_to_save, "r") as file:
+            with open(self.my_file, "r") as file:
                 file.read()
                 return True
         except:
             return False
 
+    def get_all_available_currency(self):
+        """ Returns all available currency """
+        url = f"https://api.apilayer.com/fixer/symbols"
+        response = requests.get(url, self.headers)
+        print(response.text)
+
+class MyManager:
+    def __init__(self, expense_tracker) -> None:
+        self.expense_tracker = expense_tracker
+        self.user = "user"
+
+    def start(self):
+        while True:
+            prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses","3.)\tSee all time expense"
+                      "\n4.)\tConvert currency")
+            choice = self.control_input(*prompt)
+
+            match choice:
+                case "1":
+                    expense = self.control_input("Expense:")
+                    expense_tracker.save_expense(self.user, expense)
+                    print(f"\n========================\nExpense ${expense}"
+                          " has been added.\n========================\n")
+
+                case "2":
+                    self.show_todays_expenses()
+
+                case "3":
+                    self.show_all_time_expense()
+
+                case "4":
+                    self.convert_currency()
+
+    def convert_currency(self):
+        prompt = ("Choose...", "\n1.)\tConvert", "2.)\tSee avaialble currencies")
+        self.control_input(*prompt)
+        choice = input()
+
+
+    def show_all_time_expense(self):
+        all_time_expense = expense_tracker.get_expenses_by_user(self.user)
+        sum_all_time_expense = reduce(lambda x,y: int(x) + int(y), all_time_expense)
+        print(f"\n========================\nAll time expense: ${sum_all_time_expense}")
+        print(f"Trasactions: {len(all_time_expense)}\n========================\n")
+
+    def show_todays_expenses(self):
+        todays_date = str(datetime.datetime.now().date())
+        todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.user, todays_date)
+        print("\n=================\nToday's expenses:")
+        print(f"Total: ${reduce(lambda x, y: int(x) + int(y), todays_expenses) }")
+        print(f"Trasactions: {len(todays_expenses)}")
+        for expense in todays_expenses:
+            print(f"${expense}")
+        print("=================\n")
+                    
+    def control_input(self, *text: str) -> str:
+        """ Loops while input is not correct """
+        while True:
+            if len(text) > 1:
+                for i in range(1, len(text)):
+                    print(text[i])
+            user_input = input(f"{text[0]}\n")
+
+            if user_input.strip().isalpha():
+                print("\n=====================\nType number "
+                       "only.\n=====================\n")
+                continue
+            else:
+                if int(user_input) > len(text):
+                    print("\n==================\nChoose valid number"
+                          "\n==================\n")
+                    continue
+                else:
+                    break
+
+
+        return user_input
+
+expense_tracker = ExpenseTracker("datas/expenses.json")
+my_manager = MyManager(expense_tracker)
 
 
 # if __name__ == '__main__':
