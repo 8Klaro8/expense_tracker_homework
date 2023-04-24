@@ -316,7 +316,6 @@ class MyManager:
         except:
             return False
 
-
     def show_todays_expenses(self):
         """ Shows today's expense of the user """
         if self.does_user_have_transaction(self.get_logged_user()):
