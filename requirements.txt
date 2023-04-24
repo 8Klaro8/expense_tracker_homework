@@ -1,0 +1,10 @@
+certifi==2022.12.7
+charset-normalizer==3.1.0
+idna==3.4
+keyboard==0.13.5
+requests==2.28.2
+urllib3==1.26.15
+
+
+api key from fixedapi:
+https://apilayer.com/marketplace/fixer-api?e=Sign+Up&l=Success&e=Sign+In&l=Success
