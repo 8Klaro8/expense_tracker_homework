@@ -9,11 +9,11 @@ The app is capable:
 - check all time expense.
 
 file structure:
- main.py
- test.py
+ - main.py
+ - test.py
  
  Future plans:
-  -hashing function
-  -delete expense
-  -implementation of crypto API
-  -move it a SQLite
+  - hashing function
+  - delete expense
+  - implementation of crypto API
+  - move it a SQLite
