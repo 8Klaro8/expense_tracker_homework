@@ -11,3 +11,9 @@ The app is capable:
 file structure:
  main.py
  test.py
+ 
+ Future plans:
+  -hashing function
+  -delete expense
+  -implementation of crypto API
+  -move it a SQLite
