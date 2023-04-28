@@ -4,7 +4,6 @@ import requests
 from fixed_api_key import fixed_api_key
 import datetime
 from functools import reduce
-import keyboard
 
 class ExpenseTracker:
     def __init__(self, my_file: str, password_file: str, logged_in_user: str) -> None:
