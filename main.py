@@ -163,8 +163,6 @@ class ExpenseTracker:
 class MyManager:
     def __init__(self, expense_tracker: ExpenseTracker) -> None:
         self.expense_tracker = expense_tracker
-        # self.user = user
-
     def starting_page(self):
         """Very first page the user sees"""
         values = ("Choose", "\n1.)\tLogin", "2.)\tRegister")
@@ -178,8 +176,8 @@ class MyManager:
     def start(self):
         """Shows the starting page after login/ register"""
         while True:
-            prompt = ("Choose...", "\n1.)\tAdd expense","2.)\tSee today's expenses",
-                      "3.)\tSee all time expense","4.)\tConvert currency", "5.)\tLog out")
+            prompt = ("Choose...", "\n1.)\tAdd expense", "2.)\tSee today's expenses",
+                      "3.)\tSee all time expense", "4.)\tConvert currency", "5.)\tLog out")
             choice = self._control_input(*prompt)
 
             match choice:
@@ -200,7 +198,6 @@ class MyManager:
                 case "5":
                     self.log_out_user()
 
-
     def login_page(self):
         """Creates a login page"""
         while True:
@@ -210,12 +207,15 @@ class MyManager:
                 if self.does_password_match(username, password):
                     self.save_logged_user(username)
                     self.start()
-                    
+
             else:
                 print("\n================================\n"
-                      "User does not exists!\n================================"
+                      "User does not exists!\n"
+                      "================================"
                       "\nPress 'b' to go back...")
-                if keyboard.read_key().lower() == "b":
+                
+                user_choice = input("Press 'b' to go back or enter to try again.")
+                if user_choice.lower()== "b":
                     self.starting_page()
                 else:
                     continue
@@ -229,7 +229,7 @@ class MyManager:
         """Retuns the currently logged in user"""
         with open(self.expense_tracker.logged_in_user, "r") as file:
             return file.read()
-            
+
     def save_logged_user(self, user):
         """ Saves the user when he is logged in"""
         with open(self.expense_tracker.logged_in_user, "w") as file:
@@ -253,7 +253,7 @@ class MyManager:
             try:
                 json_datas["users"][user]
                 return True
-            except:
+            except Exception:
                 return False
 
     def register_page(self):
@@ -300,27 +300,28 @@ class MyManager:
         """ Shows the all time expense of the user"""
         all_time_expense = expense_tracker.get_expenses_by_user(self.get_logged_user())
         try:
-            sum_all_time_expense = reduce(lambda x,y: int(x) + int(y), all_time_expense)
+            sum_all_time_expense = reduce(lambda x, y: int(x) + int(y), all_time_expense)
             print(f"\n========================\nAll time expense: ${sum_all_time_expense}")
             print(f"Trasactions: {len(all_time_expense)}\n========================\n")
-        except:
+        except Exception:
             print("\n========================\nYou have no transaction yet."
-                    "\n========================")
+                  "\n========================")
             return
 
     def does_user_have_transaction(self, user: str) -> bool:
         json_datas = self.expense_tracker.get_json_data_from_file()
         try:
-            all_expense_in_datum = json_datas["users"][user]["date"][self.expense_tracker.get_date()]
+            json_datas["users"][user]["date"][self.expense_tracker.get_date()]
             return True
-        except:
+        except Exception:
             return False
 
     def show_todays_expenses(self):
         """ Shows today's expense of the user """
         if self.does_user_have_transaction(self.get_logged_user()):
             todays_date = str(datetime.datetime.now().date())
-            todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.get_logged_user(), todays_date)
+            todays_expenses = expense_tracker.get_expenses_by_user_and_datum(self.get_logged_user(),
+                                                                             todays_date)
             print("\n=================\nToday's expenses:")
             print(f"Total: ${reduce(lambda x, y: int(x) + int(y), todays_expenses) }")
             print(f"Trasactions: {len(todays_expenses)}")
@@ -329,7 +330,7 @@ class MyManager:
             print("=================\n")
         else:
             print("\n========================\nYou have no transaction yet."
-                    "\n========================")
+                  "\n========================")
             return
 
     def _loop_while_not_number(self, text) -> str:
@@ -343,7 +344,7 @@ class MyManager:
             else:
                 break
         return choice
-                    
+
     def _control_input(self, *text: str) -> str:
         """ Loops while input is not correct """
         while True:
@@ -354,26 +355,21 @@ class MyManager:
 
             if user_input.strip().isalpha():
                 print("\n=====================\nType number "
-                       "only.\n=====================\n")
+                      "only.\n=====================\n")
                 continue
             else:
-                if int(user_input) > (len(text) -1 ) or int(user_input) < 1:
+                if int(user_input) > (len(text) - 1) or int(user_input) < 1:
                     print("\n==================\nChoose valid number"
                           "\n==================\n")
                     continue
                 else:
                     break
-
-
         return user_input
 
-USER_FILE = "datas/expenses.json"
-PASSWORD_FILE = "datas/passwords.json"
-LOGGED_IN_USER = "datas/logged_in_user.txt"
-expense_tracker = ExpenseTracker(USER_FILE, PASSWORD_FILE, LOGGED_IN_USER)
-my_manager = MyManager(expense_tracker)
-
-
-# if __name__ == '__main__':
-#     result = expense_tracker.convert_currency("USD", "HUF", "5")
-#     print(result)
+if __name__ == '__main__':
+    USER_FILE = "datas/expenses.json"
+    PASSWORD_FILE = "datas/passwords.json"
+    LOGGED_IN_USER = "datas/logged_in_user.txt"
+    expense_tracker = ExpenseTracker(USER_FILE, PASSWORD_FILE, LOGGED_IN_USER)
+    my_manager = MyManager(expense_tracker)
+    my_manager.starting_page()
